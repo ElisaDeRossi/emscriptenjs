@@ -1,0 +1,26 @@
+{
+  "name": "@gabrieleroncolato/emception-core",
+  "version": "1.1.27",
+  "type": "module",
+  "source": "src/index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.module.js",
+  "unpkg": "dist/index.umd.js",
+  "scripts": {
+    "build": "microbundle && npm run cp_binaryen && npm run cp_brotli && npm run cp_cpython && npm run cp_llvm && npm run cp_quicknode && npm run cp_wasmpackage",
+    "dev": "microbundle watch",
+    "cp_binaryen" : "cp ./src/modules/dependencies/binaryen/binaryen-box.wasm ./dist/binaryen-box.wasm",
+    "cp_brotli" : "cp ./src/modules/dependencies/brotli/brotli.wasm ./dist",
+    "cp_cpython" : "cp ./src/modules/dependencies/cpython/python.wasm ./dist",
+    "cp_llvm": "cp ./src/modules/dependencies/llvm/llvm-box.wasm ./dist",
+    "cp_quicknode": "cp ./src/modules/dependencies/quicknode/quicknode.wasm ./dist",
+    "cp_wasmpackage": "cp ./src/modules/dependencies/wasm-package/wasm-package.wasm ./dist"
+  },
+  "devDependencies": {
+    "microbundle": "^0.15.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GabrieleRoncolato/emception-core.git"
+  }
+}
