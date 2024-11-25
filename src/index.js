@@ -36,6 +36,7 @@ class Emception{
     tools = {};
 
     async init() {
+        console.log("prova");
         console.log(root_pack);
         console.log(lazy_cache);
 
