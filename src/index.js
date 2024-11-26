@@ -36,9 +36,9 @@ class Emception{
     tools = {};
 
     async init() {
-        console.log("prova");
+        // console.log("prova");
         console.log(root_pack);
-        console.log(lazy_cache);
+        // console.log(lazy_cache);
 
         const fileSystem = await new FileSystem();
         this.fileSystem = fileSystem;
