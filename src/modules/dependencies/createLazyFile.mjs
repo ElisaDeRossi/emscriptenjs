@@ -1,3 +1,5 @@
+import intArrayFromString from "./arrayUtils.mjs";
+
 // Modified version of createLazyFile from Emscripten's FS
 // https://github.com/emscripten-core/emscripten/blob/main/src/library_fs.js
 export default function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
@@ -7,40 +9,67 @@ export default function createLazyFile(FS, parent, name, datalength, url, canRea
         this.lengthKnown = false;
         this.content = null; // Loaded content.
     }
+
     LazyUint8Array.prototype.cacheLength = function LazyUint8Array_cacheLength() {
-        // Function to get a range from the remote URL.
+        // Function to get a range from the remote URL.        
         var doXHR = () => {
-            // TODO: Use mozResponseArrayBuffer, responseStream, etc. if available.
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, false);
+            return new Promise((resolve, reject) => {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true); // Set to true for asynchronous
 
-            // Some hints to the browser that we want binary data.
-            xhr.responseType = 'arraybuffer';
-            if (xhr.overrideMimeType) {
-                xhr.overrideMimeType('text/plain; charset=x-user-defined');
-            }
-
-            xhr.send(null);
-            if (!(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304)) throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
-            if (xhr.response !== undefined) {
-                return new Uint8Array(/** @type{Array<number>} */(xhr.response || []));
-            }
-            return intArrayFromString(xhr.responseText || '', true);
-        };
-        this.get = () => {
-            if (!this.content) {
-                this.content = doXHR();
-                if (onloaded && this.content) {
-                    onloaded(this.content);
+                // Some hints to the browser that we want binary data.
+                xhr.responseType = 'arraybuffer';
+                if (xhr.overrideMimeType) {
+                    xhr.overrideMimeType('text/plain; charset=x-user-defined');
                 }
+
+                // Set up the onload event handler
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
+                        if (xhr.response !== undefined) {
+                            resolve(new Uint8Array(xhr.response || []));
+                        }
+                        else {
+                            resolve(intArrayFromString(xhr.responseText || '', true));
+                        }
+                    } else {
+                        throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
+                    }
+                };
+
+                // Set up the onerror event handler
+                xhr.onerror = function () {
+                    throw new Error("Couldn't load " + url + ". Request failed.");
+                };
+
+                // Send the request
+                xhr.send(null);
+            });
+        };
+
+        this.get = async () => {
+            if (!this.content) {
+                await doXHR()
+                    .then(content => {
+                        this.content = content;
+                        if (onloaded) {
+                            onloaded(this.content);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        throw new Error('doXHR failed first if!');
+                    });
             }
-            if (!this.content) throw new Error('doXHR failed!');
+            if (!this.content) throw new Error('doXHR failed second if!');
+
             return this.content;
         };
 
         this._length = datalength;
         this.lengthKnown = true;
     };
+
     if (typeof XMLHttpRequest === 'undefined') {
         throw 'Cannot do synchronous binary XHRs outside webworkers in modern browsers.';
     }
@@ -61,7 +90,7 @@ export default function createLazyFile(FS, parent, name, datalength, url, canRea
 
     var node = FS.createFile(parent, name, properties, canRead, canWrite);
     node.contents = lazyArray;
-    
+
     // Add a function that defers querying the file size until it is asked the first time.
     Object.defineProperties(node, {
         usedBytes: {

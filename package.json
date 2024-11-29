@@ -1,6 +1,6 @@
 {
-  "name": "@elisaderossi/emception-core-prova",
-  "version": "0.0.2",
+  "name": "@gabrieleroncolato/emception-core",
+  "version": "1.1.29",
   "type": "module",
   "source": "src/index.js",
   "main": "dist/index.js",
@@ -21,6 +21,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ElisaDeRossi/emscriptenjs.git"
+    "url": "git+https://github.com/GabrieleRoncolato/emception-core.git"
   }
 }

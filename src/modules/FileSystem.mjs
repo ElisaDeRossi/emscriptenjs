@@ -37,9 +37,9 @@ export default class FileSystem extends EmProcess {
                 this.FS.unlink("/tmp/archive.pack.br");
             } else {
                 this.FS.writeFile("/tmp/archive.pack", buffer);
+                await this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
+                this.FS.unlink("/tmp/archive.pack");            
             }
-            await this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
-            this.FS.unlink("/tmp/archive.pack");
         }));
     }
 
