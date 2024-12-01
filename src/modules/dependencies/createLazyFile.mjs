@@ -2,16 +2,18 @@ import intArrayFromString from "./arrayUtils.mjs";
 
 // Modified version of createLazyFile from Emscripten's FS
 // https://github.com/emscripten-core/emscripten/blob/main/src/library_fs.js
-export default async function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
-    
-    //Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
+export default function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
+    // console.log("URL:", url);
+
+    // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
+    /** @constructor */
     function LazyUint8Array() {
         this.lengthKnown = false;
         this.content = null; // Loaded content.
-    } 
+    }
 
-    LazyUint8Array.prototype.cacheLength = async function LazyUint8Array_cacheLength() {
-        // Function to get a range from the remote URL.        
+    LazyUint8Array.prototype.cacheLength = function LazyUint8Array_cacheLength() {
+        // Function to get a range from the remote URL.
         var doXHR = () => {
             return new Promise((resolve, reject) => {
                 var xhr = new XMLHttpRequest();
@@ -27,44 +29,50 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
                 xhr.onload = function () {
                     if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
                         if (xhr.response !== undefined) {
+                            console.log("Response received");
                             resolve(new Uint8Array(xhr.response || []));
                         }
-                        else {
+                        else
+                        {
+                            console.log("Undefined response");
                             resolve(intArrayFromString(xhr.responseText || '', true));
                         }
                     } else {
+                        console.log("undefined response");
                         throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
                     }
                 };
 
                 // Set up the onerror event handler
                 xhr.onerror = function () {
+                    console.error("Request failed");
                     throw new Error("Couldn't load " + url + ". Request failed.");
                 };
 
                 // Send the request
+                console.log("send request");
                 xhr.send(null);
             });
         };
 
         this.get = async () => {
             if (!this.content) {
-                try {
-                    const content = await doXHR();
-                    console.log("content: ",  content);
-                    this.content = content;
-                    if (onloaded)
-                        onloaded(this.content);
-                } catch (error) {
-                    console.error(error);
-                    throw new Error('doXHR failed first if!');
-                }
+                await doXHR()
+                    .then(content => {
+                        this.content = content;
+                        if (onloaded) {
+                            onloaded(this.content);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        throw new Error('doXHR failed first if!');
+                    });
             }
             if (!this.content) throw new Error('doXHR failed second if!');
+
             return this.content;
         };
-
-        await this.get();
 
         this._length = datalength;
         this.lengthKnown = true;
@@ -77,16 +85,16 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
     var lazyArray = new LazyUint8Array();
     Object.defineProperties(lazyArray, {
         length: {
-            get: async function () {
+            get: /** @this{Object} */ function () {
                 if (!this.lengthKnown) {
-                    await this.cacheLength();
+                    this.cacheLength();
                 }
                 return this._length;
             }
         },
     });
 
-    var arrayLength = await lazyArray.length;
+    lazyArray.length;
     var properties = { isDevice: false, contents: lazyArray };
 
     var node = FS.createFile(parent, name, properties, canRead, canWrite);
@@ -138,7 +146,7 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
     };
     node.stream_ops = stream_ops;
 
-    lazyArray.cacheLength();
+    // lazyArray.cacheLength();
 
     return node;
 }

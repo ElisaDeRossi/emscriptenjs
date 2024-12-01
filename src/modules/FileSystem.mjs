@@ -37,9 +37,9 @@ export default class FileSystem extends EmProcess {
                 this.FS.unlink("/tmp/archive.pack.br");
             } else {
                 this.FS.writeFile("/tmp/archive.pack", buffer);
-                await this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
-                this.FS.unlink("/tmp/archive.pack");            
             }
+            await this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
+            this.FS.unlink("/tmp/archive.pack");
         }));
     }
 
@@ -54,9 +54,7 @@ export default class FileSystem extends EmProcess {
             this.writeFile(path, data);
         } else {
             const [, dirname = "", basename] = /(.*\/)?([^\/]*)/.exec(path);
-
-            // TODO: something is wrong in here
-            await createLazyFile(this.FS, dirname, basename, size, url, true, false, async (data) => {
+            createLazyFile(this.FS, dirname, basename, size, url, true, false, async (data) => {
                 this.writeFile(`${cache}/${md5}`, data);
                 await this.push();
             });

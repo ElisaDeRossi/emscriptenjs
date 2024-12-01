@@ -16,6 +16,7 @@ class Emception{
     tools = {};
 
     async init() {
+    	console.log("prova3");
         // console.log(root_pack);
         // console.log(lazy_cache);
 
@@ -52,8 +53,6 @@ class Emception{
         for (let tool in tools) {
             await tools[tool];
         }
-
-        console.log("end init");
     }
 
     onprocessstart = () => {};

@@ -57,10 +57,10 @@ export default class EmProcess extends Process {
             }
         }
 
-        this.#addErrorCodeToErrnoError();
+        this.#addErorCodeToErrnoError();
     }
 
-    #addErrorCodeToErrnoError = () => {
+    #addErorCodeToErrnoError = () => {
         const FS = this._module.FS;
         const ERRNO_CODES = Object.fromEntries(
             Object.entries(this._module.ERRNO_CODES)
