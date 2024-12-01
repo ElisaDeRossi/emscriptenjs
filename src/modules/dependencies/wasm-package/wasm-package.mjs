@@ -1015,7 +1015,6 @@ var Module = (() => {
             }
           },
           lookup: function (parent, name) {
-            console.log("[error throw] lookup function");
             throw FS.genericErrors[44]
           },
           mknod: function (parent, name, mode, dev) {
@@ -1025,7 +1024,6 @@ var Module = (() => {
             if (FS.isDir(old_node.mode)) {
               var new_node;
               try {
-                console.log("lookup rename");
                 new_node = FS.lookupNode(new_dir, new_name)
               } catch (e) { }
               if (new_node) {
@@ -1046,7 +1044,6 @@ var Module = (() => {
             parent.timestamp = Date.now()
           },
           rmdir: function (parent, name) {
-            console.log("lookup rmdir");
             var node = FS.lookupNode(parent, name);
             for (var i in node.contents) {
               throw new FS.ErrnoError(55)
@@ -1483,6 +1480,7 @@ var Module = (() => {
         },
         createNode: function (parent, name, mode, dev) {
           if (!FS.isDir(mode) && !FS.isFile(mode) && !FS.isLink(mode)) {
+
             throw new FS.ErrnoError(ERRNO_CODES.EINVAL)
           }
           var node = FS.createNode(parent, name, mode);
@@ -1720,7 +1718,6 @@ var Module = (() => {
             if (islast && opts.parent) {
               break
             }
-            console.log("lookup lookuppath", path);
             current = FS.lookupNode(current, parts[i]);
             current_path = PATH.join2(current_path, parts[i]);
             if (FS.isMountpoint(current)) {
@@ -1879,7 +1876,6 @@ var Module = (() => {
         },
         mayCreate: (dir, name) => {
           try {
-            console.log("lookup mayCreate");
             var node = FS.lookupNode(dir, name);
             return 20
           } catch (e) { }
@@ -1888,7 +1884,6 @@ var Module = (() => {
         mayDelete: (dir, name, isdir) => {
           var node;
           try {
-            console.log("lookup mayDelete");
             node = FS.lookupNode(dir, name)
           } catch (e) {
             return e.errno
@@ -1913,7 +1908,6 @@ var Module = (() => {
         },
         mayOpen: (node, flags) => {
           if (!node) {
-            console.log("mayOpen error");
             return 44
           }
           if (FS.isLink(node.mode)) {
@@ -2095,6 +2089,7 @@ var Module = (() => {
               node.mount.mounts.push(mount)
             }
           }
+          console.log(mountRoot);
           return mountRoot
         },
         unmount: mountpoint => {
@@ -2177,7 +2172,6 @@ var Module = (() => {
         },
         symlink: (oldpath, newpath) => {
           if (!PATH_FS.resolve(oldpath)) {
-            console.log("symlink", oldpath);
             throw new FS.ErrnoError(44)
           }
           var lookup = FS.lookupPath(newpath, {
@@ -2185,7 +2179,6 @@ var Module = (() => {
           });
           var parent = lookup.node;
           if (!parent) {
-            console.log("symlink not parent", oldpath);
             throw new FS.ErrnoError(44)
           }
           var newname = PATH.basename(newpath);
@@ -2213,13 +2206,11 @@ var Module = (() => {
           });
           new_dir = lookup.node;
           if (!old_dir || !new_dir){
-            console.log("rename", old_path);
             throw new FS.ErrnoError(44);
           }
           if (old_dir.mount !== new_dir.mount) {
             throw new FS.ErrnoError(75)
           }
-          console.log("lookup rename 1");
           var old_node = FS.lookupNode(old_dir, old_name);
           var relative = PATH_FS.relative(old_path, new_dirname);
           if (relative.charAt(0) !== ".") {
@@ -2231,7 +2222,6 @@ var Module = (() => {
           }
           var new_node;
           try {
-            console.log("lookup rename 2");
             new_node = FS.lookupNode(new_dir, new_name)
           } catch (e) { }
           if (old_node === new_node) {
@@ -2273,7 +2263,6 @@ var Module = (() => {
           });
           var parent = lookup.node;
           var name = PATH.basename(path);
-          console.log("lookup rmdir");
           var node = FS.lookupNode(parent, name);
           var errCode = FS.mayDelete(parent, name, true);
           if (errCode) {
@@ -2304,11 +2293,9 @@ var Module = (() => {
           });
           var parent = lookup.node;
           if (!parent) {
-            console.log("unlink", path);
             throw new FS.ErrnoError(44)
           }
           var name = PATH.basename(path);
-          console.log("lookup unlink");
           var node = FS.lookupNode(parent, name);
           var errCode = FS.mayDelete(parent, name, false);
           if (errCode) {
@@ -2327,7 +2314,6 @@ var Module = (() => {
           var lookup = FS.lookupPath(path);
           var link = lookup.node;
           if (!link) {
-            console.log("readlink", path);
             throw new FS.ErrnoError(44)
           }
           if (!link.node_ops.readlink) {
@@ -2341,7 +2327,6 @@ var Module = (() => {
           });
           var node = lookup.node;
           if (!node) {
-            console.log("stat", path);
             throw new FS.ErrnoError(44)
           }
           if (!node.node_ops.getattr) {
@@ -2459,7 +2444,6 @@ var Module = (() => {
         },
         open: (path, flags, mode) => {
           if (path === "") {
-            console.log("open no path", path);
             throw new FS.ErrnoError(44)
           }
           flags = typeof flags == "string" ? FS.modeStringToFlags(flags) : flags;
@@ -2493,7 +2477,6 @@ var Module = (() => {
             }
           }
           if (!node) {
-            console.log("open no node", path);
             throw new FS.ErrnoError(44)
           }
           if (FS.isChrdev(node.mode)) {
@@ -2704,7 +2687,6 @@ var Module = (() => {
             follow: true
           });
           if (lookup.node === null) {
-            console.log("chdir", path);
             throw new FS.ErrnoError(44)
           }
           if (!FS.isDir(lookup.node.mode)) {
@@ -2800,7 +2782,6 @@ var Module = (() => {
           FS.ErrnoError.prototype = new Error;
           FS.ErrnoError.prototype.constructor = FS.ErrnoError;
           [44].forEach(code => {
-            console.log("Error 44!");
             FS.genericErrors[code] = new FS.ErrnoError(code);
             FS.genericErrors[code].stack = "<generic error, no stack>"
           })
@@ -3288,7 +3269,6 @@ var Module = (() => {
           }
           if (path.length == 0) {
             if (!allowEmpty) {
-              console.log("calculateAt", path);
               throw new FS.ErrnoError(44)
             }
             return dir

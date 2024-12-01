@@ -52,6 +52,8 @@ class Emception{
         for (let tool in tools) {
             await tools[tool];
         }
+
+        console.log("end init");
     }
 
     onprocessstart = () => {};

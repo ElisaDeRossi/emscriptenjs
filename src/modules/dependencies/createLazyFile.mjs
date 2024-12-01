@@ -2,15 +2,15 @@ import intArrayFromString from "./arrayUtils.mjs";
 
 // Modified version of createLazyFile from Emscripten's FS
 // https://github.com/emscripten-core/emscripten/blob/main/src/library_fs.js
-export default function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
-    // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
-    /** @constructor */
+export default async function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
+    
+    //Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
     function LazyUint8Array() {
         this.lengthKnown = false;
         this.content = null; // Loaded content.
-    }
+    } 
 
-    LazyUint8Array.prototype.cacheLength = function LazyUint8Array_cacheLength() {
+    LazyUint8Array.prototype.cacheLength = async function LazyUint8Array_cacheLength() {
         // Function to get a range from the remote URL.        
         var doXHR = () => {
             return new Promise((resolve, reject) => {
@@ -49,22 +49,22 @@ export default function createLazyFile(FS, parent, name, datalength, url, canRea
 
         this.get = async () => {
             if (!this.content) {
-                await doXHR()
-                    .then(content => {
-                        this.content = content;
-                        if (onloaded) {
-                            onloaded(this.content);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        throw new Error('doXHR failed first if!');
-                    });
+                try {
+                    const content = await doXHR();
+                    console.log("content: ",  content);
+                    this.content = content;
+                    if (onloaded)
+                        onloaded(this.content);
+                } catch (error) {
+                    console.error(error);
+                    throw new Error('doXHR failed first if!');
+                }
             }
             if (!this.content) throw new Error('doXHR failed second if!');
-
             return this.content;
         };
+
+        await this.get();
 
         this._length = datalength;
         this.lengthKnown = true;
@@ -77,15 +77,16 @@ export default function createLazyFile(FS, parent, name, datalength, url, canRea
     var lazyArray = new LazyUint8Array();
     Object.defineProperties(lazyArray, {
         length: {
-            get: /** @this{Object} */ function () {
+            get: async function () {
                 if (!this.lengthKnown) {
-                    this.cacheLength();
+                    await this.cacheLength();
                 }
                 return this._length;
             }
         },
     });
 
+    var arrayLength = await lazyArray.length;
     var properties = { isDevice: false, contents: lazyArray };
 
     var node = FS.createFile(parent, name, properties, canRead, canWrite);

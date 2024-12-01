@@ -54,7 +54,9 @@ export default class FileSystem extends EmProcess {
             this.writeFile(path, data);
         } else {
             const [, dirname = "", basename] = /(.*\/)?([^\/]*)/.exec(path);
-            createLazyFile(this.FS, dirname, basename, size, url, true, false, async (data) => {
+
+            // TODO: something is wrong in here
+            await createLazyFile(this.FS, dirname, basename, size, url, true, false, async (data) => {
                 this.writeFile(`${cache}/${md5}`, data);
                 await this.push();
             });
