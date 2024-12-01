@@ -2,20 +2,19 @@ import intArrayFromString from "./arrayUtils.mjs";
 
 // Modified version of createLazyFile from Emscripten's FS
 // https://github.com/emscripten-core/emscripten/blob/main/src/library_fs.js
-export default function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
-    // console.log("URL:", url);
+export default async function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
 
     // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
     /** @constructor */
-    function LazyUint8Array() {
-        this.lengthKnown = false;
-        this.content = null; // Loaded content.
-    }
+    class LazyUint8Array {
+        constructor() {
+            this.lengthKnown = false;
+            this.length = 0;
+            this.content = null; // Loaded content.
+        }
 
-    LazyUint8Array.prototype.cacheLength = function LazyUint8Array_cacheLength() {
-        // Function to get a range from the remote URL.
-        var doXHR = () => {
-            return new Promise((resolve, reject) => {
+        async doXHR() {
+            return await new Promise((resolve, reject) => {
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true); // Set to true for asynchronous
 
@@ -26,127 +25,95 @@ export default function createLazyFile(FS, parent, name, datalength, url, canRea
                 }
 
                 // Set up the onload event handler
-                xhr.onload = function () {
+                xhr.onload = () => {
                     if (xhr.status >= 200 && xhr.status < 300 || xhr.status === 304) {
                         if (xhr.response !== undefined) {
-                            console.log("Response received");
-                            resolve(new Uint8Array(xhr.response || []));
+                            this.content = new Uint8Array(xhr.response || []);
                         }
-                        else
-                        {
-                            console.log("Undefined response");
-                            resolve(intArrayFromString(xhr.responseText || '', true));
+                        else {
+                            this.content = intArrayFromString(xhr.responseText || '', true);
                         }
+                        this.length = datalength;
+                        this.lengthKnown = true;
+                        resolve();
                     } else {
-                        console.log("undefined response");
-                        throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
+                        reject(new Error("Couldn't load " + url + ". Status: " + xhr.status));
                     }
                 };
 
                 // Set up the onerror event handler
-                xhr.onerror = function () {
-                    console.error("Request failed");
-                    throw new Error("Couldn't load " + url + ". Request failed.");
+                xhr.onerror = () => {
+                    // console.error("Request failed");
+                    reject(new Error("Couldn't load " + url + ". Request failed."));
                 };
 
                 // Send the request
-                console.log("send request");
                 xhr.send(null);
             });
-        };
-
-        this.get = async () => {
-            if (!this.content) {
-                await doXHR()
-                    .then(content => {
-                        this.content = content;
-                        if (onloaded) {
-                            onloaded(this.content);
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        throw new Error('doXHR failed first if!');
-                    });
-            }
-            if (!this.content) throw new Error('doXHR failed second if!');
-
-            return this.content;
-        };
-
-        this._length = datalength;
-        this.lengthKnown = true;
-    };
-
-    if (typeof XMLHttpRequest === 'undefined') {
-        throw 'Cannot do synchronous binary XHRs outside webworkers in modern browsers.';
+        }
     }
 
-    var lazyArray = new LazyUint8Array();
-    Object.defineProperties(lazyArray, {
-        length: {
-            get: /** @this{Object} */ function () {
-                if (!this.lengthKnown) {
-                    this.cacheLength();
-                }
-                return this._length;
-            }
-        },
-    });
-
-    lazyArray.length;
-    var properties = { isDevice: false, contents: lazyArray };
-
-    var node = FS.createFile(parent, name, properties, canRead, canWrite);
-    node.contents = lazyArray;
-
-    // Add a function that defers querying the file size until it is asked the first time.
-    Object.defineProperties(node, {
-        usedBytes: {
-            get: /** @this {FSNode} */ function () { return this.contents.length; }
+    return new Promise(async (resolve) => {
+        if (typeof XMLHttpRequest === 'undefined') {
+            throw 'Cannot do synchronous binary XHRs outside webworkers in modern browsers.';
         }
-    });
 
-    // override each stream op with one that tries to force load the lazy file first
-    var stream_ops = {};
-    var keys = Object.keys(node.stream_ops);
-    keys.forEach((key) => {
-        var fn = node.stream_ops[key];
-        stream_ops[key] = function forceLoadLazyFile() {
+        var lazyArray = new LazyUint8Array();
+        await lazyArray.doXHR();
+        await onloaded(lazyArray.content);
+        var properties = { isDevice: false, contents: lazyArray };
+
+        var node = FS.createFile(parent, name, properties, canRead, canWrite);
+        node.contents = lazyArray;
+
+        // Add a function that defers querying the file size until it is asked the first time.
+        Object.defineProperties(node, {
+            usedBytes: {
+                get: /** @this {FSNode} */ function () { return this.contents.length; }
+            }
+        });
+
+        // override each stream op with one that tries to force load the lazy file first
+        var stream_ops = {};
+        var keys = Object.keys(node.stream_ops);
+        keys.forEach((key) => {
+            var fn = node.stream_ops[key];
+            stream_ops[key] = function forceLoadLazyFile() {
+                FS.forceLoadFile(node);
+                return fn.apply(null, arguments);
+            };
+        });
+        function writeChunks(stream, buffer, offset, length, position) {
+            var contents = stream.node.contents;
+            if (position >= contents.length)
+                return 0;
+            var size = Math.min(contents.length - position, length);
+            var data = contents.content; // LazyUint8Array from sync binary XHR
+            for (var i = 0; i < size; i++) {
+                buffer[offset + i] = data[position + i];
+            }
+            return size;
+        }
+
+        // use a custom read function
+        stream_ops.read = (stream, buffer, offset, length, position) => {
             FS.forceLoadFile(node);
-            return fn.apply(null, arguments);
+            return writeChunks(stream, buffer, offset, length, position)
         };
+        // use a custom mmap function
+        stream_ops.mmap = (stream, length, position, prot, flags) => {
+            FS.forceLoadFile(node);
+            var ptr = mmapAlloc(length);
+            if (!ptr) {
+                const ENOMEM = 48;
+                throw new FS.ErrnoError(ENOMEM);
+            }
+            writeChunks(stream, HEAP8, ptr, length, position);
+            return { ptr: ptr, allocated: true };
+        };
+
+        node.stream_ops = stream_ops;
+
+        resolve(node);
     });
-    function writeChunks(stream, buffer, offset, length, position) {
-        var contents = stream.node.contents;
-        if (position >= contents.length)
-            return 0;
-        var size = Math.min(contents.length - position, length);
-        var data = contents.get(); // LazyUint8Array from sync binary XHR
-        for (var i = 0; i < size; i++) {
-            buffer[offset + i] = data[position + i];
-        }
-        return size;
-    }
-    // use a custom read function
-    stream_ops.read = (stream, buffer, offset, length, position) => {
-        FS.forceLoadFile(node);
-        return writeChunks(stream, buffer, offset, length, position)
-    };
-    // use a custom mmap function
-    stream_ops.mmap = (stream, length, position, prot, flags) => {
-        FS.forceLoadFile(node);
-        var ptr = mmapAlloc(length);
-        if (!ptr) {
-            const ENOMEM = 48;
-            throw new FS.ErrnoError(ENOMEM);
-        }
-        writeChunks(stream, HEAP8, ptr, length, position);
-        return { ptr: ptr, allocated: true };
-    };
-    node.stream_ops = stream_ops;
-
-    // lazyArray.cacheLength();
-
-    return node;
 }

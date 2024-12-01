@@ -16,9 +16,8 @@ class Emception{
     tools = {};
 
     async init() {
-    	console.log("prova3");
-        // console.log(root_pack);
-        // console.log(lazy_cache);
+
+        console.log("Init filesystem");
 
         const fileSystem = await new FileSystem();
         this.fileSystem = fileSystem;
@@ -27,6 +26,7 @@ class Emception{
         await fileSystem.unpack(root_pack[0]);
 
         // Populate the emscripten cache
+        console.log("Populate cache");
         for (const [relpath, ...rest] of lazy_cache) {
             const path = `/emscripten/${relpath.slice(2)}`;
             await fileSystem.cachedLazyFile(path, ...rest);
@@ -35,6 +35,8 @@ class Emception{
         if (fileSystem.exists("/emscripten/cache/cache.lock")) {
             fileSystem.unlink("/emscripten/cache/cache.lock");
         }
+
+        console.log("Load tools");
 
         const processConfig = {
             FS: fileSystem.FS,
@@ -53,6 +55,8 @@ class Emception{
         for (let tool in tools) {
             await tools[tool];
         }
+
+        console.log("Emception initiated");
     }
 
     onprocessstart = () => {};

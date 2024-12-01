@@ -288,7 +288,6 @@ async function get_files_url(array, cacheUrl)
     });
 }
 
-
 let lazyCacheUrl = "http://localhost:3000/static_lib/lazy_cache";
 
 get_files_url(lazyCacheArray, lazyCacheUrl);
