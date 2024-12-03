@@ -1,5 +1,5 @@
 {
-  "name": "@gabrieleroncolato/emception-core",
+  "name": "@emscriptenjs/emscriptenjs",
   "version": "1.1.29",
   "type": "module",
   "source": "src/index.js",

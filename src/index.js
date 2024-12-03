@@ -10,7 +10,7 @@ import get_root_url from "./modules/root_pack.mjs";
 
 const root_pack = get_root_url('http://localhost:3000/static_lib/root_pack/root.pack.br');
 
-class Emception{
+class Emscriptenjs{
     
     fileSystem = null;
     tools = {};
@@ -56,7 +56,7 @@ class Emception{
             await tools[tool];
         }
 
-        console.log("Emception initiated");
+        console.log("Emscriptenjs initiated");
     }
 
     onprocessstart = () => {};
@@ -132,4 +132,4 @@ class Emception{
     };
 }
 
-export default Emception;
+export default Emscriptenjs;
