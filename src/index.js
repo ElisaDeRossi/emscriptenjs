@@ -72,12 +72,13 @@ class Emscriptenjs{
             `/emscripten/${args[0]}.py`,
             ...args.slice(1)
         ];
-        return this.tools["main-python"].exec(args, {
+        let result = this.tools["main-python"].exec(args, {
             print: (...args) => this.onstdout(...args),
             printErr: (...args) => this.onstderr(...args),
             cwd: "/working",
             path: ["/emscripten"],
-        })
+        });
+        return result;
     };
 
     _run_process(argv, opts = {}) {
