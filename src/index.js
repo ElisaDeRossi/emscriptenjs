@@ -55,12 +55,10 @@ class Emscriptenjs{
     onprocessstart = () => {};
     onprocessend = () => {};
     onstdout(...args) {
-        console.log("Stdout");
         console.log(args);
     };
     onstderr(...args) {
-        console.log("Stderr");
-        console.log(args);
+        console.log(args[0]);
     };
 
     run(...args) {
