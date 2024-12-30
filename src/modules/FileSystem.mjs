@@ -1,7 +1,7 @@
 import EmProcess from "./dependencies/EmProcess.mjs";
 import WasmPackageModule from "./dependencies/wasm-package/wasm-package.mjs";
 import createLazyFile from "./dependencies/createLazyFile.mjs"
-import BrotliProcess from "./dependencies/BrotliProcess.mjs";
+import { BrotliProcess } from "./WasmProcesses.mjs";
 
 export default class FileSystem extends EmProcess {
     _brotli = null;

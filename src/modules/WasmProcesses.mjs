@@ -4,6 +4,7 @@ import QuickNodeModule from "./dependencies/quicknode/quicknode.mjs";
 import PythonModule from "./dependencies/cpython/python.mjs";
 import LlvmBoxModule from "./dependencies/llvm/llvm-box.mjs";
 import BinaryenBoxModule from "./dependencies/binaryen/binaryen-box.mjs";
+import BrotliModule from "./dependencies/brotli/brotli.mjs";
 
 export class QuickNodeProcess extends EmProcess {
     constructor(opts) {
@@ -32,3 +33,10 @@ export class BinaryenBoxProcess extends EmProcess {
         super(BinaryenBoxModule, { ...opts, wasmBinary });
     }
 };
+
+export class BrotliProcess extends EmProcess {
+    constructor(opts) {
+        super(BrotliModule, { ...opts });
+    }
+};
+
