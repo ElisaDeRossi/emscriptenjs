@@ -5,28 +5,27 @@ import BinaryenBoxProcess from "./modules/BinaryenBoxProcess.mjs";
 import Python3Process from "./modules/Python3Process.mjs";
 import NodeProcess from "./modules/QuickNodeProcess.mjs";
 
-import lazy_cache from "./modules/dependencies/lazy-cache/index.mjs";
-import get_root_url from "./modules/root_pack.mjs";
+import { lazyCacheArray, rootPackArray } from "./modules/file_arrays.mjs";
 
-const root_pack = get_root_url('http://localhost:3000/static_lib/root_pack/root.pack.br');
-
-class Emscriptenjs{
+export default class Emscriptenjs{
     
     fileSystem = null;
     tools = {};
 
     async init() {
 
+        const baseUrl = window.location.protocol + '//' + window.location.host + '/static_lib';
+
         const fileSystem = await new FileSystem();
         this.fileSystem = fileSystem;
 
-        await fileSystem.cachedLazyFile(...root_pack);
-        await fileSystem.unpack(root_pack[0]);
+        await fileSystem.cachedLazyFile(...rootPackArray, `${baseUrl}/root_pack${rootPackArray[0]}`);
+        await fileSystem.unpack(rootPackArray[0]);
 
         // Populate the emscripten cache
-        for (const [relpath, ...rest] of lazy_cache) {
+        for (const [relpath, size, md5] of lazyCacheArray) {
             const path = `/emscripten/${relpath.slice(2)}`;
-            await fileSystem.cachedLazyFile(path, ...rest);
+            await fileSystem.cachedLazyFile(path, size, md5, `${baseUrl}/lazy_cache/${md5}.a`);
         }
 
         if (fileSystem.exists("/emscripten/cache/cache.lock")) {
@@ -128,6 +127,4 @@ class Emscriptenjs{
         this.fileSystem.push();
         return result;
     };
-}
-
-export default Emscriptenjs;
+};
