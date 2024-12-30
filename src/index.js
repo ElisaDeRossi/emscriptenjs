@@ -1,10 +1,5 @@
 import FileSystem from "./modules/FileSystem.mjs";
-
-import LlvmBoxProcess from "./modules/LlvmBoxProcess.mjs";
-import BinaryenBoxProcess from "./modules/BinaryenBoxProcess.mjs";
-import Python3Process from "./modules/Python3Process.mjs";
-import NodeProcess from "./modules/QuickNodeProcess.mjs";
-
+import { QuickNodeProcess, Python3Process, LlvmBoxProcess, BinaryenBoxProcess } from "./modules/WasmProcesses.mjs";
 import { lazyCacheArray, rootPackArray } from "./modules/file_arrays.mjs";
 
 export default class Emscriptenjs{
@@ -34,13 +29,13 @@ export default class Emscriptenjs{
 
         const processConfig = {
             FS: fileSystem.FS,
-            onrunprocess: (...args) => this._run_process(...args),
+            onrunprocess: (...args) => this.run_process(...args),
         };
 
         const tools = {
             "llvm-box": new LlvmBoxProcess(processConfig),
             "binaryen-box": new BinaryenBoxProcess(processConfig),
-            "node": new NodeProcess(processConfig),
+            "node": new QuickNodeProcess(processConfig),
             "python": new Python3Process(processConfig),
             "main-python": new Python3Process(processConfig),
         };
@@ -51,15 +46,6 @@ export default class Emscriptenjs{
         }
     }
 
-    onprocessstart = () => {};
-    onprocessend = () => {};
-    onstdout(...args) {
-        console.log(args);
-    };
-    onstderr(...args) {
-        console.log(args[0]);
-    };
-
     run(...args) {
         if (args.length == 1) args = args[0].split(/ +/);
         args = [
@@ -69,22 +55,15 @@ export default class Emscriptenjs{
             ...args.slice(1)
         ];
         let result = this.tools["main-python"].exec(args, {
-            print: (...args) => this.onstdout(...args),
-            printErr: (...args) => this.onstderr(...args),
+            print:    (...args) => { console.log(args); },
+            printErr: (...args) => { console.log(args[0]); },
             cwd: "/working",
             path: ["/emscripten"],
         });
         return result;
     };
 
-    _run_process(argv, opts = {}) {
-        this.onprocessstart(argv);
-        const result = this._run_process_impl(argv, opts);
-        this.onprocessend(result);
-        return result;
-    }
-
-    _run_process_impl(argv, opts = {}) {
+    run_process(argv, opts = {}) {
         const in_emscripten = argv[0].match(/\/emscripten\/(.+)(\.py)?/)
         if (in_emscripten) {
             argv = [
