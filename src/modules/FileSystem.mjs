@@ -1,6 +1,6 @@
-import EmProcess from "./dependencies/EmProcess.mjs";
+import EmProcess from "./EmProcess.mjs";
 import WasmPackageModule from "./dependencies/wasm-package/wasm-package.mjs";
-import createLazyFile from "./dependencies/createLazyFile.mjs"
+import createLazyFile from "./createLazyFile.mjs"
 import { BrotliProcess } from "./WasmProcesses.mjs";
 
 export default class FileSystem extends EmProcess {
@@ -9,10 +9,10 @@ export default class FileSystem extends EmProcess {
 
     constructor({ cache = "/cache", ...opts } = {}) {
         super(WasmPackageModule, { ...opts });
-        this.#init(cache, opts);
+        this.init(cache, opts);
     }
 
-    #init = async (cache, opts) => {
+    async init(cache, opts) {
         await this;
         this._brotli = new BrotliProcess({ FS: this.FS, ...opts});
         this._cache = (async () => {

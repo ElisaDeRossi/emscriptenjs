@@ -1,4 +1,4 @@
-import EmProcess from "./dependencies/EmProcess.mjs";
+import EmProcess from "./EmProcess.mjs";
 
 import QuickNodeModule from "./dependencies/quicknode/quicknode.mjs";
 import PythonModule from "./dependencies/cpython/python.mjs";
