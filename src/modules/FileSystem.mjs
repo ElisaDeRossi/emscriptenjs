@@ -16,10 +16,10 @@ export default class FileSystem extends EmProcess {
         await this;
         this._brotli = new BrotliProcess({ FS: this.FS, ...opts});
         this._cache = (async () => {
-            while (cache.endsWith("/")) {
+            while (cache.endsWith("/"))
                 cache = cache.slice(0, -1);
-            }
-            if (this.exists(cache)) return cache;
+            if (this.exists(cache)) 
+                return cache;
             this.persist(cache);
             await this.pull();
             return cache;

@@ -1,6 +1,4 @@
-import Process from "./Process.mjs";
-
-export default class EmProcess extends Process {
+export default class EmProcess {
     _module = null;
     _memory = null;
 
@@ -9,16 +7,13 @@ export default class EmProcess extends Process {
 
     constructor(Module, {
         FS,
-        onrunprocess,
-        onprint,
-        onprintErr,
+        onrunprocess = () => ({ returncode: 1, stdout: "", stderr: "Not implemented" }),
+        onprint = () => {},
+        onprintErr = () => {},
         ...opts
     } = {}) {
-        super({
-            onrunprocess,
-            onprint,
-            onprintErr,
-        });
+        Object.assign(this, { onrunprocess, onprint, onprintErr });
+
         this.ready = this.#init(Module, FS, { onrunprocess, ...opts });
 
         const promise = this.ready.then(() => {
@@ -135,5 +130,18 @@ export default class EmProcess extends Process {
             stdout: stdout.join("\n"),
             stderr: stderr.join("\n"),
         }
+    }
+
+    // Methods from old Process class
+    onrunprocess = () => {};
+    onprint = () => {};
+    onprintErr = () => {};
+
+    get cwd() {
+        return this._module.FS.cwd();
+    }
+
+    set cwd(cwd) {
+        this._module.FS.chdir(cwd);
     }
 };
