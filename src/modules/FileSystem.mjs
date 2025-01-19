@@ -1,21 +1,20 @@
-import EmProcess from "./EmProcess.mjs";
-import WasmPackageModule from "./dependencies/wasm-package/wasm-package.mjs";
 import createLazyFile from "./createLazyFile.mjs"
-import { BrotliProcess } from "./WasmProcesses.mjs";
+import { BrotliProcess, WasmPackageProcess } from "./Processes.mjs";
 
-export default class FileSystem extends EmProcess {
-    _brotli = null;
-    _cache = null;
+export default class FileSystem extends WasmPackageProcess {
+    brotli = null;
+    cache = null;
 
     constructor({ cache = "/cache", ...opts } = {}) {
-        super(WasmPackageModule, { ...opts });
+        super(...opts);
+
         this.init(cache, opts);
     }
 
     async init(cache, opts) {
         await this;
-        this._brotli = new BrotliProcess({ FS: this.FS, ...opts});
-        this._cache = (async () => {
+        this.brotli = new BrotliProcess({ FS: this.FS, ...opts});
+        this.cache = (async () => {
             while (cache.endsWith("/"))
                 cache = cache.slice(0, -1);
             if (this.exists(cache)) 
@@ -31,7 +30,7 @@ export default class FileSystem extends EmProcess {
             const buffer = this.FS.readFile(path, { encoding: "binary" });
             if (path.endsWith(".br")) {
                 // it's a brotli file, decompress it
-                const brotli = await this._brotli;
+                const brotli = await this.brotli;
                 this.FS.writeFile("/tmp/archive.pack.br", buffer);
                 await brotli.exec(["brotli", "--decompress", "/tmp/archive.pack.br"], { cwd: "/tmp/" });
                 this.FS.unlink("/tmp/archive.pack.br");
@@ -44,7 +43,7 @@ export default class FileSystem extends EmProcess {
     }
 
     async cachedLazyFile(path, size, md5, url) {
-        const cache = await this._cache;
+        const cache = await this.cache;
 
         if (this.exists(path)) {
             this.unlink(path);
@@ -69,42 +68,46 @@ export default class FileSystem extends EmProcess {
     exists(path) {
         return this.analyzePath(path).exists;
     }
+
     analyzePath(...args) {
         return this.FS.analyzePath(...args)
     }
+
     mkdirTree(...args) {
         return this.FS.mkdirTree(...args)
     }
+
     mkdir(...args) {
         return this.FS.mkdir(...args)
     }
+
     unlink(...args) {
         return this.FS.unlink(...args)
     }
+
     readFile(...args) {
         return this.FS.readFile(...args)
     }
+    
     writeFile(...args) {
         return this.FS.writeFile(...args)
     }
 
     pull() {
         return new Promise((resolve, reject) => this.FS.syncfs(true, function (err) {
-            if (err) {
+            if (err)
                 reject(err);
-            } else {
+            else
                 resolve();
-            }
         }));
     }
 
     push() {
         return new Promise((resolve, reject) => this.FS.syncfs(false, function (err) {
-            if (err) {
+            if (err)
                 reject(err);
-            } else {
+            else
                 resolve();
-            }
         }));
     }
 };

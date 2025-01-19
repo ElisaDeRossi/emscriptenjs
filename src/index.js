@@ -1,6 +1,6 @@
 import FileSystem from "./modules/FileSystem.mjs";
-import { QuickNodeProcess, Python3Process, LlvmBoxProcess, BinaryenBoxProcess } from "./modules/WasmProcesses.mjs";
-import { lazyCacheArray, rootPackArray } from "./modules/file_arrays.mjs";
+import { QuickNodeProcess, Python3Process, LlvmBoxProcess, BinaryenBoxProcess } from "./modules/Processes.mjs";
+import { lazyCacheArray, rootPackArray } from "./modules/fileArrays.mjs";
 
 export default class Emscriptenjs{
     

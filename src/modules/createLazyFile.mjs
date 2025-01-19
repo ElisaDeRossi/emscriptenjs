@@ -3,8 +3,8 @@
 export default async function createLazyFile(FS, parent, name, datalength, url, canRead, canWrite, onloaded) {
 
     // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
-    /** @constructor */
     class LazyUint8Array {
+
         constructor() {
             this.lengthKnown = false;
             this.length = 0;
@@ -29,7 +29,7 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
                             this.content = new Uint8Array(xhr.response || []);
                         }
                         else {
-                            this.content = intArrayFromString(xhr.responseText || '', true);
+                            this.content = this.intArrayFromString(xhr.responseText || '', true);
                         }
                         this.length = datalength;
                         this.lengthKnown = true;
@@ -48,6 +48,14 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
                 // Send the request
                 xhr.send(null);
             });
+        }
+
+        intArrayFromString(stringy, dontAddNull, length) {
+            var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
+            var u8array = new Array(len);
+            var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
+            if (dontAddNull) u8array.length = numBytesWritten;
+            return u8array;
         }
     }
 
@@ -114,12 +122,4 @@ export default async function createLazyFile(FS, parent, name, datalength, url, 
 
         resolve(node);
     });
-}
-
-function intArrayFromString(stringy, dontAddNull, length) {
-    var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
-    var u8array = new Array(len);
-    var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
-    if (dontAddNull) u8array.length = numBytesWritten;
-    return u8array;
 }
