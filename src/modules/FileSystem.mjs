@@ -5,9 +5,9 @@ export default class FileSystem extends WasmPackageProcess {
     brotli = null;
     cache = null;
 
+    // Initiate filesystem
     constructor({ cache = "/cache", ...opts } = {}) {
         super(...opts);
-
         this.init(cache, opts);
     }
 
@@ -25,6 +25,7 @@ export default class FileSystem extends WasmPackageProcess {
         })();
     }
 
+    // Unpack root_pack file
     async unpack(...paths) {
         return Promise.all(paths.flat().map(async (path) => {
             const buffer = this.FS.readFile(path, { encoding: "binary" });
@@ -37,20 +38,24 @@ export default class FileSystem extends WasmPackageProcess {
             } else {
                 this.FS.writeFile("/tmp/archive.pack", buffer);
             }
-            await this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
+            this.exec(["wasm-package", "unpack", "/tmp/archive.pack"], { cwd: "/" });
             this.FS.unlink("/tmp/archive.pack");
         }));
     }
 
+    // Ensures a file is in cache
     async cachedLazyFile(path, size, md5, url) {
         const cache = await this.cache;
 
         if (this.exists(path)) {
             this.unlink(path);
         }
+
+        // Files already in cache
         if (this.exists(`${cache}/${md5}`)) {
             const data = this.readFile(`${cache}/${md5}`, {encoding: "binary"});
             this.writeFile(path, data);
+        // Files not in cache
         } else {
             const [, dirname = "", basename] = /(.*\/)?([^\/]*)/.exec(path);
             await createLazyFile(this.FS, dirname, basename, size, url, true, false, async (data) => {

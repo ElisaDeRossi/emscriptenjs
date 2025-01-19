@@ -11,9 +11,9 @@ export default class Emscriptenjs{
 
         const baseUrl = window.location.protocol + '//' + window.location.host + '/static_lib';
 
+        // Initialize filesystem
         const fileSystem = await new FileSystem();
         this.fileSystem = fileSystem;
-
         await fileSystem.cachedLazyFile(...rootPackArray, `${baseUrl}/root_pack${rootPackArray[0]}`);
         await fileSystem.unpack(rootPackArray[0]);
 
@@ -27,16 +27,18 @@ export default class Emscriptenjs{
             fileSystem.unlink("/emscripten/cache/cache.lock");
         }
 
+        // Tools configuration variables (filesystem and onrunprocess function)
         const processConfig = {
             FS: fileSystem.FS,
             onrunprocess: (...args) => this.run_process(...args),
         };
 
+        // Tools initialization
         const tools = {
-            "llvm-box": new LlvmBoxProcess(processConfig),
-            "binaryen-box": new BinaryenBoxProcess(processConfig),
-            "node": new QuickNodeProcess(processConfig),
-            "python": new Python3Process(processConfig),
+            "llvm-box": new LlvmBoxProcess(processConfig),          // LLVM compiler
+            "binaryen-box": new BinaryenBoxProcess(processConfig),  // creation and optimization of wasm modules
+            "node": new QuickNodeProcess(processConfig),            // Node environment
+            "python": new Python3Process(processConfig),            // Python 3
             "main-python": new Python3Process(processConfig),
         };
         this.tools = tools;
@@ -46,6 +48,7 @@ export default class Emscriptenjs{
         }
     }
 
+    // Runs compilation of c/c++ code
     run(...args) {
         if (args.length == 1) args = args[0].split(/ +/);
         args = [
@@ -61,8 +64,9 @@ export default class Emscriptenjs{
             path: ["/emscripten"],
         });
         return result;
-    };
+    }
 
+    // On run process function
     run_process(argv, opts = {}) {
         const in_emscripten = argv[0].match(/\/emscripten\/(.+)(\.py)?/)
         if (in_emscripten) {
@@ -105,5 +109,5 @@ export default class Emscriptenjs{
         });
         this.fileSystem.push();
         return result;
-    };
+    }
 };

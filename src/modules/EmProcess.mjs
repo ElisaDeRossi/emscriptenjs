@@ -4,7 +4,11 @@ export default class EmProcess {
 
     _print = (...args) => console.log(...args);
     _printErr = (...args) => console.warn(...args);
+    onrunprocess = () => {};
+    onprint = () => {};
+    onprintErr = () => {};
 
+    // Initialization
     constructor(Module, {
         FS,
         onrunprocess = () => ({ returncode: 1, stdout: "", stderr: "Not implemented" }),
@@ -68,14 +72,7 @@ export default class EmProcess {
         });
     }
 
-    get FS() {
-        return this._module.FS;
-    }
-
-    _callMain(argc, argv) {
-        return this._module._main(argc, argv);
-    }
-
+    // Execute process
     exec(args, opts = {}) {
         if ((typeof args) === "string") args = args.split(/ +/g);
 
@@ -132,10 +129,10 @@ export default class EmProcess {
         }
     }
 
-    // Methods from old Process class
-    onrunprocess = () => {};
-    onprint = () => {};
-    onprintErr = () => {};
+    // Getters and setters
+    get FS() {
+        return this._module.FS;
+    }
 
     get cwd() {
         return this._module.FS.cwd();

@@ -14,6 +14,7 @@ export class QuickNodeProcess extends EmProcess {
     }
 };
 
+// Python 3 process
 export class Python3Process extends EmProcess {
     constructor(opts) {
         const wasmBinary = opts.FS.readFile("/wasm/python.wasm");
@@ -21,6 +22,7 @@ export class Python3Process extends EmProcess {
     }
 };
 
+// LLVM process
 export class LlvmBoxProcess extends EmProcess {
     constructor(opts) {
         const wasmBinary = opts.FS.readFile("/wasm/llvm-box.wasm");
