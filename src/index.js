@@ -1,8 +1,9 @@
 import FileSystem from "./modules/FileSystem.mjs";
 import { QuickNodeProcess, Python3Process, LlvmBoxProcess, BinaryenBoxProcess } from "./modules/Processes.mjs";
 import { lazyCacheArray, rootPackArray } from "./modules/fileArrays.mjs";
+import { EventEmitter } from 'events';
 
-export default class Emscriptenjs{
+export default class Emscriptenjs extends EventEmitter {
     
     fileSystem = null;
     tools = {};
@@ -49,7 +50,7 @@ export default class Emscriptenjs{
     }
 
     // Runs compilation of c/c++ code
-    run(...args) {
+    compile(...args) {
         if (args.length == 1) args = args[0].split(/ +/);
         args = [
             "/usr/bin/python",
@@ -58,12 +59,49 @@ export default class Emscriptenjs{
             ...args.slice(1)
         ];
         let result = this.tools["main-python"].exec(args, {
-            print:    (...args) => { console.log(args); },
-            printErr: (...args) => { console.log(args[0]); },
+            print:    (...args) => { 
+                this.emit('compilationStdout', args);
+            },
+            printErr: (...args) => { 
+                this.emit('compilationStderr', args[0]);
+            },
             cwd: "/working",
             path: ["/emscripten"],
         });
         return result;
+    }
+
+    // Execute process
+    async execute() {
+        const content = await this.fileSystem.readFile("/working/main.js", { encoding: "utf8" });
+        // eslint-disable-next-line
+        const funct = new Function(content);
+
+        // Override console.log function
+        const originalLog = console.log;
+        console.log = (message) => {
+            this.emit('executionStdout', message);
+        };
+
+        // Override console.error function
+        const originalError = console.error;
+        console.error = (message) => {
+            this.emit('executionStderr', message);
+        };
+
+        // Override prompt function
+        const originalPrompt = window.prompt;
+        window.prompt = (message, def) => {
+            this.emit('executionStdin', message, def);
+        };
+        
+        // Execute function
+        funct();
+
+        // Restore original functions
+        console.log = originalLog;
+        console.error = originalError;
+        window.prompt = originalPrompt;
     }
 
     // On run process function
@@ -108,6 +146,20 @@ export default class Emscriptenjs{
             path: ["/emscripten"]
         });
         this.fileSystem.push();
+
+        // PROVA
+        // Emit events for standard output and standard error
+        /*
+        result.stdout.on('data', (data) => {
+            this.emit('executionStdout', data.toString());
+        });
+
+        result.stderr.on('data', (data) => {
+            this.emit('executionStderr', data.toString());
+        });
+        */
+        // END PROVA
+
         return result;
     }
 };

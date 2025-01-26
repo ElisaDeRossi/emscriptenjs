@@ -9,9 +9,9 @@
   "scripts": {
     "build": "microbundle && npm run cp_binaryen && npm run cp_brotli && npm run cp_cpython && npm run cp_llvm && npm run cp_quicknode && npm run cp_wasmpackage",
     "dev": "microbundle watch",
-    "cp_binaryen" : "copy .\\src\\modules\\dependencies\\binaryen\\binaryen-box.wasm .\\dist\\binaryen-box.wasm",
-    "cp_brotli" : "copy .\\src\\modules\\dependencies\\brotli\\brotli.wasm .\\dist\\brotli.wasm",
-    "cp_cpython" : "copy .\\src\\modules\\dependencies\\cpython\\python.wasm .\\dist\\python.wasm",
+    "cp_binaryen": "copy .\\src\\modules\\dependencies\\binaryen\\binaryen-box.wasm .\\dist\\binaryen-box.wasm",
+    "cp_brotli": "copy .\\src\\modules\\dependencies\\brotli\\brotli.wasm .\\dist\\brotli.wasm",
+    "cp_cpython": "copy .\\src\\modules\\dependencies\\cpython\\python.wasm .\\dist\\python.wasm",
     "cp_llvm": "copy .\\src\\modules\\dependencies\\llvm\\llvm-box.wasm .\\dist\\llvm-box.wasm",
     "cp_quicknode": "copy .\\src\\modules\\dependencies\\quicknode\\quicknode.wasm .\\dist\\quicknode.wasm",
     "cp_wasmpackage": "copy .\\src\\modules\\dependencies\\wasm-package\\wasm-package.wasm .\\dist\\wasm-package.wasm"
@@ -21,6 +21,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GabrieleRoncolato/emception-core.git"
+    "url": "git+https://github.com/emscriptenjs/emscriptenjs.git"
+  },
+  "dependencies": {
+    "events": "^3.3.0"
   }
 }
